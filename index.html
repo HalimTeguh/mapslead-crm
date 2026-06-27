@@ -252,15 +252,27 @@
   <!-- ===== TOAST ===== -->
   <div id="toast-container" class="toast-container"></div>
 
-  <!-- Scripts: SheetJS first, then app, then Google Maps with callback -->
+  <!-- Scripts -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="config.js"></script>
   <script src="app.js"></script>
   <script>
-    // Google Maps loaded callback — app.js is loaded sync before Maps API
-    window.initMapsApp = function() {
-      VaradataApp.initMaps();
-    };
+    window.initMapsApp = function() { VaradataApp.initMaps(); };
+
+    (function loadMaps() {
+      const key = window.VARADATA_CONFIG && window.VARADATA_CONFIG.mapsApiKey;
+      if (!key || key === 'YOUR_GOOGLE_MAPS_API_KEY_HERE') {
+        document.getElementById('search-empty').innerHTML =
+          '<div class="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>' +
+          '<h3>API key not configured</h3>' +
+          '<p>Copy <code>config.example.js</code> to <code>config.js</code> and add your Google Maps API key.</p>';
+        return;
+      }
+      const s = document.createElement('script');
+      s.src = 'https://maps.googleapis.com/maps/api/js?key=' + key + '&libraries=places&callback=initMapsApp';
+      s.async = true; s.defer = true;
+      document.head.appendChild(s);
+    })();
   </script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBQyia9T27DozpBStu83NK7f1Qis1_yra8&libraries=places&callback=initMapsApp" async defer></script>
 </body>
 </html>
