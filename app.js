@@ -22,15 +22,12 @@ const MAX_DETAILS_CONCURRENT = 3; // parallel Place Detail calls
 // STATE
 // ============================================================
 const state = {
-  placesService: null,
-  geocoder: null,
   userLocation: null,
-  searchResults: [],     // array of Place objects from Maps
+  searchResults: [],
   selectedIds: new Set(),
-  pagination: null,      // Google Maps pagination object
-  addedPlaceIds: new Set(), // placeIds already in CRM
+  addedPlaceIds: new Set(),
   isSearching: false,
-  leads: [],             // all CRM leads
+  leads: [],
   crmSelectedIds: new Set(),
   editingLeadId: null,
 };
@@ -40,10 +37,8 @@ const state = {
 // ============================================================
 const VaradataApp = {
   initMaps() {
-    const el = document.getElementById('maps-placeholder');
-    state.placesService = new google.maps.places.PlacesService(el);
-    state.geocoder = new google.maps.Geocoder();
-    window._varadataReady = true; // signal for tests / debug
+    // New Places API (google.maps.places.Place) — no service instance needed
+    window._varadataReady = true;
     console.log('[Varadata] Google Maps Places ready');
     this.boot();
   },
@@ -92,8 +87,20 @@ function switchTab(name) {
 // ============================================================
 // SEARCH
 // ============================================================
+// Normalize new Places API object → internal format used throughout the app
+function normalizePlace(p) {
+  return {
+    place_id: p.id,
+    name: p.displayName || '',
+    formatted_address: p.formattedAddress || '',
+    rating: p.rating || null,
+    user_ratings_total: p.userRatingCount || 0,
+    types: p.types || [],
+  };
+}
+
 async function performSearch() {
-  if (!state.placesService) {
+  if (!window._varadataReady) {
     showToast('Google Maps is still loading, please wait…', 'warning');
     return;
   }
@@ -108,74 +115,54 @@ async function performSearch() {
   state.isSearching = true;
   state.searchResults = [];
   state.selectedIds.clear();
-  state.pagination = null;
 
   setSearchLoading(true);
   document.getElementById('search-clear').classList.remove('hidden');
 
   try {
-    const useLocation = document.getElementById('use-location').checked;
-    let location = null;
+    const request = {
+      textQuery: query,
+      fields: ['displayName', 'formattedAddress', 'rating', 'userRatingCount', 'types', 'id'],
+      maxResultCount: 20,
+    };
 
-    if (useLocation) {
-      location = await getUserLocation();
+    if (document.getElementById('use-location').checked) {
+      const loc = await getUserLocation();
+      request.locationBias = {
+        circle: {
+          center: { lat: loc.lat, lng: loc.lng },
+          radius: parseInt(document.getElementById('radius-select').value),
+        },
+      };
     }
 
-    const request = { query };
-    if (location) {
-      request.location = new google.maps.LatLng(location.lat, location.lng);
-      request.radius = parseInt(document.getElementById('radius-select').value);
+    const { places } = await google.maps.places.Place.searchByText(request);
+
+    state.isSearching = false;
+    setSearchLoading(false);
+
+    if (!places || places.length === 0) {
+      showResultsArea(false);
+      showToast('No results found. Try a different keyword.', 'info');
+      return;
     }
 
-    state.placesService.textSearch(request, handleSearchResults);
+    state.searchResults = places.map(normalizePlace);
+    showResultsArea(true);
+    renderResults();
+    document.getElementById('load-more-wrap').classList.add('hidden');
+    document.getElementById('results-count-label').textContent =
+      `${state.searchResults.length} result${state.searchResults.length !== 1 ? 's' : ''} found`;
+
   } catch (err) {
     console.error(err);
     setSearchLoading(false);
     state.isSearching = false;
-    showToast('Search failed: ' + err.message, 'error');
+    showToast('Search failed: ' + (err.message || err), 'error');
   }
 }
 
-function handleSearchResults(results, status, pagination) {
-  state.isSearching = false;
-  setSearchLoading(false);
-
-  if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-    showResultsArea(false);
-    showToast('No results found. Try a different keyword.', 'info');
-    return;
-  }
-  if (status !== google.maps.places.PlacesServiceStatus.OK) {
-    showToast('Error: ' + status, 'error');
-    return;
-  }
-
-  state.searchResults = [...state.searchResults, ...results];
-  state.pagination = pagination && pagination.hasNextPage ? pagination : null;
-
-  showResultsArea(true);
-  renderResults();
-
-  // Show load more if there's a next page
-  const lmw = document.getElementById('load-more-wrap');
-  lmw.classList.toggle('hidden', !state.pagination);
-  if (state.pagination) {
-    const btn = document.getElementById('load-more-btn');
-    btn.textContent = 'Load more results';
-    btn.disabled = false;
-  }
-
-  document.getElementById('results-count-label').textContent =
-    `${state.searchResults.length} result${state.searchResults.length !== 1 ? 's' : ''} found`;
-}
-
-function loadMore() {
-  if (!state.pagination) return;
-  const btn = document.getElementById('load-more-btn');
-  btn.textContent = 'Loading…';
-  btn.disabled = true;
-  state.pagination.nextPage();
-}
+function loadMore() { /* pagination not available in new Places JS API */ }
 
 function renderResults() {
   const grid = document.getElementById('results-grid');
@@ -334,16 +321,19 @@ async function quickAddToCRM(placeId, idx) {
 // ============================================================
 // PLACES API HELPERS
 // ============================================================
-function getPlaceDetails(placeId) {
-  return new Promise((resolve, reject) => {
-    state.placesService.getDetails({
-      placeId,
-      fields: ['formatted_phone_number', 'international_phone_number', 'website', 'business_status', 'opening_hours'],
-    }, (result, status) => {
-      if (status === google.maps.places.PlacesServiceStatus.OK) resolve(result);
-      else resolve(null);
-    });
-  });
+async function getPlaceDetails(placeId) {
+  try {
+    const place = new google.maps.places.Place({ id: placeId });
+    await place.fetchFields({ fields: ['nationalPhoneNumber', 'internationalPhoneNumber', 'websiteURI', 'businessStatus'] });
+    return {
+      formatted_phone_number: place.nationalPhoneNumber || '',
+      international_phone_number: place.internationalPhoneNumber || '',
+      website: place.websiteURI || '',
+      business_status: place.businessStatus || '',
+    };
+  } catch (e) {
+    return null;
+  }
 }
 
 async function fetchDetailsBatch(places) {
@@ -872,7 +862,6 @@ function clearSearch() {
   document.getElementById('search-empty').classList.remove('hidden');
   state.searchResults = [];
   state.selectedIds.clear();
-  state.pagination = null;
   document.getElementById('search-input').focus();
 }
 
