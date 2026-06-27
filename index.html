@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Varadata</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Varadata">
+  <link rel="apple-touch-icon" href="icons/icon-192.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Hidden placeholder required by PlacesService -->
+  <div id="maps-placeholder" style="display:none;width:1px;height:1px;"></div>
+
+  <!-- ===== HEADER ===== -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <rect width="28" height="28" rx="6" fill="#2563eb"/>
+          <path d="M14 4c-4.4 0-8 3.6-8 8 0 6 8 16 8 16s8-10 8-16c0-4.4-3.6-8-8-8zm0 10.8c-1.5 0-2.8-1.3-2.8-2.8S12.5 9.2 14 9.2s2.8 1.3 2.8 2.8-1.3 2.8-2.8 2.8z" fill="white"/>
+        </svg>
+        <span class="logo-text">Varadata</span>
+      </div>
+
+      <nav class="main-nav">
+        <button class="nav-btn active" data-tab="search" onclick="switchTab('search')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Search
+        </button>
+        <button class="nav-btn" data-tab="crm" onclick="switchTab('crm')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          CRM
+          <span class="nav-badge" id="lead-count">0</span>
+        </button>
+      </nav>
+
+      <div class="header-actions">
+        <button class="btn btn-sm btn-outline" onclick="exportToExcel()" title="Export to Excel">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+        <button class="btn btn-sm btn-ghost install-btn hidden" id="install-btn" onclick="installPWA()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v10m0 0l-3-3m3 3l3-3"/><path d="M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4"/></svg>
+          Install
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main-content">
+
+    <!-- SEARCH TAB -->
+    <section id="tab-search" class="tab-panel active">
+      <div class="search-hero">
+        <h1 class="search-title">Varadata — Find Leads on Google Maps</h1>
+        <p class="search-subtitle">Search businesses by keyword and location, then save them to your CRM</p>
+
+        <div class="search-box-wrap">
+          <div class="search-input-row">
+            <div class="search-input-wrap">
+              <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input
+                type="text"
+                id="search-input"
+                class="search-input"
+                placeholder='e.g. "restaurant Jakarta", "dentist Surabaya", "hotel Bali"'
+                onkeydown="if(event.key==='Enter') performSearch()"
+              >
+              <button class="search-clear hidden" id="search-clear" onclick="clearSearch()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <button class="btn btn-primary btn-search" id="search-btn" onclick="performSearch()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              Search
+            </button>
+          </div>
+
+          <div class="search-options-row">
+            <label class="option-check">
+              <input type="checkbox" id="use-location" onchange="toggleLocationOpts()">
+              <span class="check-box"></span>
+              Use my location
+            </label>
+            <div class="location-opts hidden" id="location-opts">
+              <select class="select-sm" id="radius-select">
+                <option value="1000">1 km radius</option>
+                <option value="5000" selected>5 km radius</option>
+                <option value="10000">10 km radius</option>
+                <option value="25000">25 km radius</option>
+                <option value="50000">50 km radius</option>
+              </select>
+            </div>
+            <div class="search-tip">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+              Tip: include city name for better results
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results area -->
+      <div id="results-area" class="results-area hidden">
+        <div class="results-toolbar">
+          <div class="results-info">
+            <span id="results-count-label">0 results</span>
+          </div>
+          <div class="results-tools">
+            <label class="option-check">
+              <input type="checkbox" id="select-all-check" onchange="toggleSelectAll(this.checked)">
+              <span class="check-box"></span>
+              Select all
+            </label>
+            <button class="btn btn-sm btn-primary" id="add-selected-btn" onclick="addSelectedToCRM()" disabled>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add to CRM (<span id="sel-count">0</span>)
+            </button>
+          </div>
+        </div>
+
+        <div id="results-grid" class="results-grid"></div>
+
+        <div id="load-more-wrap" class="load-more-wrap hidden">
+          <button class="btn btn-outline" id="load-more-btn" onclick="loadMore()">
+            Load more results
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div id="search-empty" class="empty-state">
+        <div class="empty-icon">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </div>
+        <h3>Search Google Maps</h3>
+        <p>Enter a keyword above to find businesses and generate leads</p>
+      </div>
+    </section>
+
+    <!-- CRM TAB -->
+    <section id="tab-crm" class="tab-panel">
+      <!-- Stats row -->
+      <div class="stats-row" id="stats-row">
+        <div class="stat-card">
+          <div class="stat-num" id="stat-total">0</div>
+          <div class="stat-lbl">Total Leads</div>
+        </div>
+        <div class="stat-card stat-new">
+          <div class="stat-num" id="stat-new">0</div>
+          <div class="stat-lbl">New</div>
+        </div>
+        <div class="stat-card stat-contacted">
+          <div class="stat-num" id="stat-contacted">0</div>
+          <div class="stat-lbl">Contacted</div>
+        </div>
+        <div class="stat-card stat-won">
+          <div class="stat-num" id="stat-won">0</div>
+          <div class="stat-lbl">Won</div>
+        </div>
+        <div class="stat-card stat-lost">
+          <div class="stat-num" id="stat-lost">0</div>
+          <div class="stat-lbl">Lost</div>
+        </div>
+      </div>
+
+      <!-- CRM Toolbar -->
+      <div class="crm-toolbar">
+        <div class="crm-search-wrap">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="crm-search" class="crm-search-input" placeholder="Search leads..." oninput="filterLeads()">
+        </div>
+        <select class="select-sm" id="status-filter" onchange="filterLeads()">
+          <option value="">All Status</option>
+          <option value="new">New</option>
+          <option value="contacted">Contacted</option>
+          <option value="interested">Interested</option>
+          <option value="proposal">Proposal Sent</option>
+          <option value="won">Won</option>
+          <option value="lost">Lost</option>
+        </select>
+        <select class="select-sm" id="sort-select" onchange="filterLeads()">
+          <option value="dateAdded_desc">Newest first</option>
+          <option value="dateAdded_asc">Oldest first</option>
+          <option value="name_asc">Name A-Z</option>
+          <option value="rating_desc">Highest rating</option>
+        </select>
+        <button class="btn btn-sm btn-success" onclick="exportToExcel()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Excel
+        </button>
+        <button class="btn btn-sm btn-danger-outline" id="delete-selected-btn" onclick="deleteSelected()" style="display:none">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6m4-6v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          Delete selected
+        </button>
+      </div>
+
+      <!-- CRM Table -->
+      <div class="table-wrap" id="crm-table-wrap">
+        <table class="crm-table" id="crm-table">
+          <thead>
+            <tr>
+              <th class="col-check">
+                <input type="checkbox" id="crm-select-all" onchange="toggleCRMSelectAll(this.checked)">
+              </th>
+              <th>Business</th>
+              <th>Category</th>
+              <th>Phone</th>
+              <th>Website</th>
+              <th>Rating</th>
+              <th>Status</th>
+              <th>Added</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="crm-tbody"></tbody>
+        </table>
+        <div id="crm-empty" class="crm-empty hidden">
+          <div class="empty-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <h3>No leads yet</h3>
+          <p>Search Google Maps and add businesses to your CRM</p>
+          <button class="btn btn-primary" onclick="switchTab('search')">Start searching</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== LEAD MODAL ===== -->
+  <div id="lead-modal" class="modal-overlay hidden" onclick="if(event.target===this) closeModal()">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title">Lead Details</h2>
+        <button class="modal-close" onclick="closeModal()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer" id="modal-footer"></div>
+    </div>
+  </div>
+
+  <!-- ===== TOAST ===== -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Scripts: SheetJS first, then app, then Google Maps with callback -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="app.js"></script>
+  <script>
+    // Google Maps loaded callback — app.js is loaded sync before Maps API
+    window.initMapsApp = function() {
+      VaradataApp.initMaps();
+    };
+  </script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBQyia9T27DozpBStu83NK7f1Qis1_yra8&libraries=places&callback=initMapsApp" async defer></script>
+</body>
+</html>
