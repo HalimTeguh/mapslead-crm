@@ -35,7 +35,6 @@ async function setupMockedPage(page) {
                     userRatingCount: 128,
                     types: ['restaurant', 'point_of_interest', 'establishment', 'food'],
                     location: { latitude: -6.2088, longitude: 106.8456 },
-                    googleMapsUri: 'https://maps.google.com/?cid=1234567890',
                   },
                   {
                     id: 'ChIJN1t_tDeuEmsRUsoyG83frY5',
@@ -45,7 +44,6 @@ async function setupMockedPage(page) {
                     userRatingCount: 256,
                     types: ['cafe', 'point_of_interest', 'establishment', 'food', 'store'],
                     location: { latitude: -6.2146, longitude: 106.8451 },
-                    googleMapsUri: 'https://maps.google.com/?cid=0987654321',
                   },
                 ],
               };
@@ -115,17 +113,18 @@ test.describe('Search Results - Maps Link', () => {
     const firstCard = page.locator('.result-card').first();
     const mapsLink = firstCard.locator('.result-actions a');
     const href = await mapsLink.getAttribute('href');
-    expect(href).toContain('maps.google.com');
+    expect(href).toContain('google.com/maps');
   });
 
-  test('Maps link uses official Google Maps URI when available', async ({ page }) => {
+  test('Maps link uses coordinates for precise location', async ({ page }) => {
     await performSearch(page, 'restoran jakarta');
     const firstCard = page.locator('.result-card').first();
     const mapsLink = firstCard.locator('.result-actions a');
     const href = await mapsLink.getAttribute('href');
-    // When googleMapsUri is provided by API, it should use the official URL
-    expect(href).toContain('maps.google.com');
-    expect(href).toContain('cid=');
+    // URL should contain coordinates from the mock API location data
+    expect(href).toContain('query=');
+    expect(href).toContain('query_place_id=');
+    expect(href).toMatch(/query=-?\d+\.\d+,-?\d+\.\d+/);
   });
 });
 
