@@ -1,7 +1,7 @@
 {
   "name": "Varadata",
   "short_name": "Varadata",
-  "description": "Varadata — Lead generation CRM powered by Google Maps",
+  "description": "Varadata — CRM lead generation berbasis Google Maps",
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "any",
@@ -24,14 +24,14 @@
   "categories": ["business", "productivity"],
   "shortcuts": [
     {
-      "name": "Search Leads",
+      "name": "Cari Lead",
       "url": "./index.html#search",
-      "description": "Search Google Maps for new leads"
+      "description": "Cari bisnis di Google Maps"
     },
     {
-      "name": "My CRM",
+      "name": "CRM Saya",
       "url": "./index.html#crm",
-      "description": "View and manage your leads"
+      "description": "Lihat dan kelola lead-mu"
     }
   ]
 }

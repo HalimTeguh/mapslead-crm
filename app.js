@@ -1,5 +1,5 @@
 /* ============================================================
-   MAPSLEAD CRM — app.js
+   VARADATA — Lead CRM powered by Google Maps
    ============================================================ */
 
 'use strict';
@@ -8,12 +8,12 @@
 // CONSTANTS
 // ============================================================
 const STATUSES = {
-  new:       { label: 'New',           cls: 's-new' },
-  contacted: { label: 'Contacted',     cls: 's-contacted' },
-  interested:{ label: 'Interested',    cls: 's-interested' },
-  proposal:  { label: 'Proposal Sent', cls: 's-proposal' },
-  won:       { label: 'Won',           cls: 's-won' },
-  lost:      { label: 'Lost',          cls: 's-lost' },
+  new:       { label: 'Baru',              cls: 's-new' },
+  contacted: { label: 'Dihubungi',         cls: 's-contacted' },
+  interested:{ label: 'Tertarik',          cls: 's-interested' },
+  proposal:  { label: 'Proposal Dikirim',  cls: 's-proposal' },
+  won:       { label: 'Deal',              cls: 's-won' },
+  lost:      { label: 'Gagal',             cls: 's-lost' },
 };
 const STORAGE_KEY = 'varadata_leads_v1';
 const MAX_DETAILS_CONCURRENT = 3; // parallel Place Detail calls
@@ -37,7 +37,6 @@ const state = {
 // ============================================================
 const VaradataApp = {
   initMaps() {
-    // New Places API (google.maps.places.Place) — no service instance needed
     window._varadataReady = true;
     console.log('[Varadata] Google Maps Places ready');
     this.boot();
@@ -76,18 +75,21 @@ const VaradataApp = {
 // ============================================================
 function switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.nav-btn, .bottom-nav-btn').forEach(b => b.classList.remove('active'));
+
   const panel = document.getElementById(`tab-${name}`);
-  panel.classList.remove('hidden');
-  panel.classList.add('active');
-  document.querySelector(`[data-tab="${name}"]`).classList.add('active');
+  if (panel) {
+    panel.classList.remove('hidden');
+    panel.classList.add('active');
+  }
+
+  document.querySelectorAll(`[data-tab="${name}"]`).forEach(b => b.classList.add('active'));
   if (name === 'crm') renderCRM();
 }
 
 // ============================================================
 // SEARCH
 // ============================================================
-// Normalize new Places API object → internal format used throughout the app
 function normalizePlace(p) {
   return {
     place_id: p.id,
@@ -101,13 +103,13 @@ function normalizePlace(p) {
 
 async function performSearch() {
   if (!window._varadataReady) {
-    showToast('Google Maps is still loading, please wait…', 'warning');
+    showToast('Google Maps masih memuat, tunggu sebentar…', 'warning');
     return;
   }
   const query = document.getElementById('search-input').value.trim();
   if (!query) {
     document.getElementById('search-input').focus();
-    showToast('Enter a keyword to search', 'warning');
+    showToast('Masukkan kata kunci pencarian', 'warning');
     return;
   }
   if (state.isSearching) return;
@@ -143,7 +145,7 @@ async function performSearch() {
 
     if (!places || places.length === 0) {
       showResultsArea(false);
-      showToast('No results found. Try a different keyword.', 'info');
+      showToast('Tidak ada hasil. Coba kata kunci lain.', 'info');
       return;
     }
 
@@ -152,13 +154,13 @@ async function performSearch() {
     renderResults();
     document.getElementById('load-more-wrap').classList.add('hidden');
     document.getElementById('results-count-label').textContent =
-      `${state.searchResults.length} result${state.searchResults.length !== 1 ? 's' : ''} found`;
+      `${state.searchResults.length} hasil ditemukan`;
 
   } catch (err) {
     console.error(err);
     setSearchLoading(false);
     state.isSearching = false;
-    showToast('Search failed: ' + (err.message || err), 'error');
+    showToast('Pencarian gagal: ' + (err.message || err), 'error');
   }
 }
 
@@ -166,7 +168,6 @@ function loadMore() { /* pagination not available in new Places JS API */ }
 
 function renderResults() {
   const grid = document.getElementById('results-grid');
-  // Re-render all (simpler and ensures selection state is correct)
   grid.innerHTML = state.searchResults.map((place, i) => resultCardHTML(place, i)).join('');
   updateSelectionUI();
 }
@@ -197,10 +198,10 @@ function resultCardHTML(place, idx) {
         <div class="result-rating">
           <span class="stars">${starStr(parseFloat(rating))}</span>
           <span class="rating-val">${rating}</span>
-          <span class="reviews">(${reviews.toLocaleString()})</span>
-        </div>` : '<div class="result-rating" style="color:var(--text-3);font-size:12px">No rating</div>'}
+          <span class="reviews">(${reviews.toLocaleString('id-ID')})</span>
+        </div>` : '<div class="result-rating" style="color:var(--text-3);font-size:12px">Belum ada rating</div>'}
       </div>
-      ${inCRM ? `<span class="added-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Added</span>` : ''}
+      ${inCRM ? `<span class="added-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Tersimpan</span>` : ''}
     </div>
     ${place.formatted_address ? `
     <div class="result-address">
@@ -209,7 +210,9 @@ function resultCardHTML(place, idx) {
     </div>` : ''}
     <div class="result-actions">
       <button class="btn btn-sm btn-outline" onclick="event.stopPropagation(); quickAddToCRM('${place.place_id}', ${idx})" ${inCRM ? 'disabled' : ''}>
-        ${inCRM ? '✓ In CRM' : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add to CRM'}
+        ${inCRM
+          ? 'Sudah ada'
+          : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Tambah ke CRM'}
       </button>
       <a class="btn btn-sm btn-ghost" href="https://www.google.com/maps/place/?q=place_id:${place.place_id}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
@@ -225,7 +228,6 @@ function toggleSelect(placeId) {
   } else {
     state.selectedIds.add(placeId);
   }
-  // Update card visual
   const card = document.getElementById(`rcard-${placeId}`);
   if (card) {
     card.classList.toggle('selected', state.selectedIds.has(placeId));
@@ -252,8 +254,11 @@ function updateSelectionUI() {
 
   const total = state.searchResults.length;
   const allSel = total > 0 && count === total;
-  document.getElementById('select-all-check').checked = allSel;
-  document.getElementById('select-all-check').indeterminate = count > 0 && !allSel;
+  const sac = document.getElementById('select-all-check');
+  if (sac) {
+    sac.checked = allSel;
+    sac.indeterminate = count > 0 && !allSel;
+  }
 }
 
 async function addSelectedToCRM() {
@@ -262,23 +267,21 @@ async function addSelectedToCRM() {
   const newOnes = selectedPlaces.filter(p => !state.addedPlaceIds.has(p.place_id));
 
   if (newOnes.length === 0) {
-    showToast('All selected leads are already in CRM', 'info');
+    showToast('Semua lead terpilih sudah ada di CRM', 'info');
     return;
   }
 
-  // Add with basic info immediately
   newOnes.forEach(place => addBasicLead(place));
   saveLeads();
   updateLeadCount();
   state.selectedIds.clear();
   renderResults();
-  showToast(`${newOnes.length} lead${newOnes.length > 1 ? 's' : ''} added! Fetching details…`, 'success');
+  showToast(`${newOnes.length} lead ditambahkan! Mengambil detail…`, 'success');
 
-  // Fetch details in batches
   await fetchDetailsBatch(newOnes);
   saveLeads();
   renderCRM();
-  showToast('Contact details updated', 'success');
+  showToast('Detail kontak diperbarui', 'success');
 }
 
 async function quickAddToCRM(placeId, idx) {
@@ -290,20 +293,18 @@ async function quickAddToCRM(placeId, idx) {
   saveLeads();
   updateLeadCount();
 
-  // Update card
   const card = document.getElementById(`rcard-${placeId}`);
   if (card) {
     card.classList.add('added');
     const addBtn = card.querySelector('.btn-outline');
-    if (addBtn) { addBtn.textContent = '✓ In CRM'; addBtn.disabled = true; }
+    if (addBtn) { addBtn.textContent = 'Sudah ada'; addBtn.disabled = true; }
     if (!card.querySelector('.added-badge')) {
       card.querySelector('.result-card-header').insertAdjacentHTML('beforeend',
-        `<span class="added-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Added</span>`);
+        `<span class="added-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Tersimpan</span>`);
     }
   }
-  showToast(`"${place.name}" added to CRM`, 'success');
+  showToast(`"${place.name}" ditambahkan ke CRM`, 'success');
 
-  // Fetch details
   try {
     const details = await getPlaceDetails(placeId);
     const lead = state.leads.find(l => l.placeId === placeId);
@@ -351,17 +352,16 @@ async function fetchDetailsBatch(places) {
         }
       } catch (e) { /* skip */ }
     }));
-    // Small delay between batches to be polite to the API
     if (i + MAX_DETAILS_CONCURRENT < places.length) await delay(300);
   }
 }
 
 function getUserLocation() {
   return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) return reject(new Error('Geolocation not supported'));
+    if (!navigator.geolocation) return reject(new Error('Geolocation tidak didukung'));
     navigator.geolocation.getCurrentPosition(
       pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      err => reject(new Error('Location access denied'))
+      err => reject(new Error('Akses lokasi ditolak'))
     );
   });
 }
@@ -418,15 +418,24 @@ function saveLeads() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state.leads));
     updateLeadCount();
   } catch (e) {
-    showToast('Storage full — could not save leads', 'error');
+    showToast('Penyimpanan penuh — lead tidak dapat disimpan', 'error');
   }
 }
 
 function updateLeadCount() {
-  const badge = document.getElementById('lead-count');
   const n = state.leads.length;
-  badge.textContent = n > 0 ? n : '';
-  badge.toggleAttribute('data-zero', n === 0);
+
+  const badge = document.getElementById('lead-count');
+  if (badge) {
+    badge.textContent = n > 0 ? n : '';
+    badge.toggleAttribute('data-zero', n === 0);
+  }
+
+  const bottomBadge = document.getElementById('bottom-lead-count');
+  if (bottomBadge) {
+    bottomBadge.textContent = n > 0 ? n : '';
+    bottomBadge.toggleAttribute('data-zero', n === 0);
+  }
 }
 
 // ============================================================
@@ -438,16 +447,17 @@ function renderCRM() {
   const tbody = document.getElementById('crm-tbody');
   const empty = document.getElementById('crm-empty');
   const tableWrap = document.getElementById('crm-table-wrap');
+  const table = document.getElementById('crm-table');
 
   if (state.leads.length === 0) {
     tbody.innerHTML = '';
     empty.classList.remove('hidden');
-    tableWrap.querySelector('table').classList.add('hidden');
+    table.classList.add('hidden');
     return;
   }
 
   empty.classList.add('hidden');
-  tableWrap.querySelector('table').classList.remove('hidden');
+  table.classList.remove('hidden');
 
   tbody.innerHTML = leads.map(lead => leadRowHTML(lead)).join('');
   updateCRMSelection();
@@ -464,50 +474,50 @@ function leadRowHTML(lead) {
 
   return `
   <tr id="lrow-${lead.id}" class="${sel ? 'selected-row' : ''}">
-    <td class="col-check">
+    <td class="col-check" data-label="Pilih">
       <div class="option-check" style="margin:0">
         <input type="checkbox" id="lchk-${lead.id}" ${sel ? 'checked' : ''} onchange="toggleCRMSelect('${lead.id}', this.checked)">
         <label for="lchk-${lead.id}" class="check-box" style="width:16px;height:16px"></label>
       </div>
     </td>
-    <td>
+    <td data-label="Bisnis">
       <div class="lead-name">${esc(lead.name)}</div>
       ${lead.address ? `<div class="lead-address" title="${esc(lead.address)}">${esc(lead.address)}</div>` : ''}
     </td>
-    <td style="color:var(--text-2);font-size:13px;white-space:nowrap">${esc(cats || '—')}</td>
-    <td class="lead-phone">
+    <td data-label="Kategori" style="color:var(--text-2);font-size:13px;white-space:nowrap">${esc(cats || '—')}</td>
+    <td data-label="Telepon" class="lead-phone">
       ${lead.phone
-        ? `<a href="tel:${lead.phone}" style="color:var(--text-2);text-decoration:none">${esc(lead.phone)}</a>`
+        ? `<a href="tel:${lead.phone}">${esc(lead.phone)}</a>`
         : lead.detailsFetched
           ? '<span style="color:var(--text-3);font-size:12px">—</span>'
-          : `<span class="fetching-badge"><svg class="spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> fetching</span>`
+          : `<span class="fetching-badge"><svg class="spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> mengambil</span>`
       }
     </td>
-    <td class="lead-website">
+    <td data-label="Website" class="lead-website">
       ${lead.website
         ? `<a href="${lead.website}" target="_blank" rel="noopener" title="${esc(lead.website)}">${esc(domain)}</a>`
         : '<span class="no-data">—</span>'
       }
     </td>
-    <td>
+    <td data-label="Rating">
       ${lead.rating
         ? `<div class="lead-rating"><span class="stars">${starStr(lead.rating)}</span><span style="font-size:12px;color:var(--text-2)">${lead.rating.toFixed(1)}</span></div>`
         : '<span style="color:var(--text-3);font-size:12px">—</span>'
       }
     </td>
-    <td>
+    <td data-label="Status">
       <select class="status-select ${statusCls}" onchange="updateStatus('${lead.id}', this.value)">
         ${statusOpts}
       </select>
     </td>
-    <td style="color:var(--text-3);font-size:12px;white-space:nowrap">${fmtDate(lead.dateAdded)}</td>
+    <td data-label="Ditambahkan" style="color:var(--text-3);font-size:12px;white-space:nowrap">${fmtDate(lead.dateAdded)}</td>
     <td class="col-actions">
       <div class="table-actions">
         <button class="action-btn edit" title="Edit" onclick="openEditModal('${lead.id}')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </button>
-        <button class="action-btn delete" title="Delete" onclick="deleteLead('${lead.id}')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6m4-6v6"/></svg>
+        <button class="action-btn delete" title="Hapus" onclick="deleteLead('${lead.id}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6m4-6v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
         </button>
       </div>
     </td>
@@ -566,26 +576,23 @@ function updateStatus(id, newStatus) {
   lead.lastModified = new Date().toISOString();
   saveLeads();
   updateStats();
-  // Re-style the select
   const row = document.getElementById(`lrow-${id}`);
   if (row) {
     const sel = row.querySelector('.status-select');
-    if (sel) {
-      sel.className = `status-select ${STATUSES[newStatus]?.cls || 's-new'}`;
-    }
+    if (sel) sel.className = `status-select ${STATUSES[newStatus]?.cls || 's-new'}`;
   }
 }
 
 function deleteLead(id) {
   const lead = state.leads.find(l => l.id === id);
   if (!lead) return;
-  if (!confirm(`Delete "${lead.name}" from your CRM?`)) return;
+  if (!confirm(`Hapus "${lead.name}" dari CRM?`)) return;
   state.leads = state.leads.filter(l => l.id !== id);
   state.addedPlaceIds.delete(lead.placeId);
   state.crmSelectedIds.delete(id);
   saveLeads();
   renderCRM();
-  showToast(`"${lead.name}" removed`, 'info');
+  showToast(`"${lead.name}" dihapus`, 'info');
 }
 
 function toggleCRMSelect(id, checked) {
@@ -620,7 +627,7 @@ function updateCRMSelection() {
 function deleteSelected() {
   const ids = [...state.crmSelectedIds];
   if (ids.length === 0) return;
-  if (!confirm(`Delete ${ids.length} lead${ids.length > 1 ? 's' : ''}?`)) return;
+  if (!confirm(`Hapus ${ids.length} lead?`)) return;
   ids.forEach(id => {
     const lead = state.leads.find(l => l.id === id);
     if (lead) state.addedPlaceIds.delete(lead.placeId);
@@ -629,7 +636,7 @@ function deleteSelected() {
   state.crmSelectedIds.clear();
   saveLeads();
   renderCRM();
-  showToast(`${ids.length} lead${ids.length > 1 ? 's' : ''} deleted`, 'info');
+  showToast(`${ids.length} lead dihapus`, 'info');
 }
 
 // ============================================================
@@ -649,20 +656,20 @@ function openEditModal(id) {
     </div>` : ''}
     <div class="form-grid">
       <div class="form-field full">
-        <label class="form-label">Business Name</label>
-        <input class="form-input" id="edit-name" value="${esc(lead.name)}" placeholder="Business name">
+        <label class="form-label">Nama Bisnis</label>
+        <input class="form-input" id="edit-name" value="${esc(lead.name)}" placeholder="Nama bisnis">
       </div>
       <div class="form-field">
-        <label class="form-label">Phone</label>
+        <label class="form-label">Telepon</label>
         <input class="form-input" id="edit-phone" value="${esc(lead.phone || '')}" placeholder="+62 xxx xxxx xxxx">
       </div>
       <div class="form-field">
         <label class="form-label">Email</label>
-        <input class="form-input" type="email" id="edit-email" value="${esc(lead.email || '')}" placeholder="contact@example.com">
+        <input class="form-input" type="email" id="edit-email" value="${esc(lead.email || '')}" placeholder="kontak@contoh.com">
       </div>
       <div class="form-field full">
         <label class="form-label">Website</label>
-        <input class="form-input" id="edit-website" value="${esc(lead.website || '')}" placeholder="https://example.com">
+        <input class="form-input" id="edit-website" value="${esc(lead.website || '')}" placeholder="https://contoh.com">
       </div>
       <div class="form-field">
         <label class="form-label">Status</label>
@@ -677,14 +684,14 @@ function openEditModal(id) {
         <input class="form-input" id="edit-rating" value="${lead.rating || ''}" placeholder="—" readonly>
       </div>
       <div class="form-field full">
-        <label class="form-label">Notes</label>
-        <textarea class="form-input" id="edit-notes" rows="4" placeholder="Add notes, follow-up reminders…">${esc(lead.notes || '')}</textarea>
+        <label class="form-label">Catatan</label>
+        <textarea class="form-input" id="edit-notes" rows="4" placeholder="Catatan, jadwal follow-up, dll.">${esc(lead.notes || '')}</textarea>
       </div>
     </div>
   `;
   document.getElementById('modal-footer').innerHTML = `
-    <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-    <button class="btn btn-primary" onclick="saveLeadEdit()">Save Changes</button>
+    <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+    <button class="btn btn-primary" onclick="saveLeadEdit()">Simpan Perubahan</button>
   `;
   document.getElementById('lead-modal').classList.remove('hidden');
   document.getElementById('edit-name').focus();
@@ -706,7 +713,7 @@ function saveLeadEdit() {
   saveLeads();
   renderCRM();
   closeModal();
-  showToast('Lead updated', 'success');
+  showToast('Lead diperbarui', 'success');
 }
 
 function closeModal() {
@@ -719,38 +726,37 @@ function closeModal() {
 // ============================================================
 function exportToExcel() {
   if (!window.XLSX) {
-    showToast('Excel library not loaded yet. Please try again.', 'error');
+    showToast('Library Excel belum dimuat. Coba lagi sebentar.', 'error');
     return;
   }
   const leads = getFilteredLeads();
   if (leads.length === 0) {
-    showToast('No leads to export', 'warning');
+    showToast('Tidak ada lead untuk diekspor', 'warning');
     return;
   }
 
   const rows = leads.map((l, i) => ({
     'No.': i + 1,
-    'Business Name': l.name,
-    'Category': (l.categories || []).join(', '),
-    'Address': l.address,
-    'Phone': l.phone || '',
+    'Nama Bisnis': l.name,
+    'Kategori': (l.categories || []).join(', '),
+    'Alamat': l.address,
+    'Telepon': l.phone || '',
     'Website': l.website || '',
     'Email': l.email || '',
     'Rating': l.rating || '',
-    'Reviews': l.reviewCount || '',
+    'Ulasan': l.reviewCount || '',
     'Status': STATUSES[l.status]?.label || l.status,
-    'Notes': l.notes || '',
-    'Source': l.source || 'Google Maps',
-    'Date Added': fmtDateFull(l.dateAdded),
+    'Catatan': l.notes || '',
+    'Sumber': l.source || 'Google Maps',
+    'Tanggal Ditambahkan': fmtDateFull(l.dateAdded),
   }));
 
   const ws = XLSX.utils.json_to_sheet(rows);
 
-  // Column widths
   ws['!cols'] = [
     { wch: 5 }, { wch: 32 }, { wch: 20 }, { wch: 40 }, { wch: 18 },
-    { wch: 30 }, { wch: 28 }, { wch: 8 }, { wch: 10 }, { wch: 15 },
-    { wch: 40 }, { wch: 14 }, { wch: 18 },
+    { wch: 30 }, { wch: 28 }, { wch: 8 }, { wch: 10 }, { wch: 18 },
+    { wch: 40 }, { wch: 14 }, { wch: 20 },
   ];
 
   const wb = XLSX.utils.book_new();
@@ -758,7 +764,7 @@ function exportToExcel() {
 
   const fname = `Varadata_${fmtDateFile()}.xlsx`;
   XLSX.writeFile(wb, fname);
-  showToast(`Exported ${leads.length} leads to ${fname}`, 'success');
+  showToast(`Diekspor ${leads.length} lead ke ${fname}`, 'success');
 }
 
 // ============================================================
@@ -770,7 +776,7 @@ function installPWA() {
   window._pwaPrompt.userChoice.then(result => {
     if (result.outcome === 'accepted') {
       document.getElementById('install-btn').classList.add('hidden');
-      showToast('Varadata installed!', 'success');
+      showToast('Varadata terpasang!', 'success');
     }
     window._pwaPrompt = null;
   });
@@ -790,15 +796,14 @@ function setSearchLoading(on) {
   const empty = document.getElementById('search-empty');
 
   if (on) {
-    btn.innerHTML = `<svg class="spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Searching…`;
+    btn.innerHTML = `<svg class="spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Mencari…`;
     btn.disabled = true;
     empty.classList.add('hidden');
     document.getElementById('results-area').classList.add('hidden');
-    // Show skeleton
     document.getElementById('results-area').innerHTML = skeletonHTML();
     document.getElementById('results-area').classList.remove('hidden');
   } else {
-    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Search`;
+    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Cari`;
     btn.disabled = false;
   }
 }
@@ -825,26 +830,25 @@ function showResultsArea(show) {
   if (show) {
     area.innerHTML = '';
     area.classList.remove('hidden');
-    // Rebuild inner structure
     area.innerHTML = `
       <div class="results-toolbar">
-        <div class="results-info"><span id="results-count-label">0 results</span></div>
+        <div class="results-info"><span id="results-count-label">0 hasil</span></div>
         <div class="results-tools">
           <label class="option-check">
             <input type="checkbox" id="select-all-check" onchange="toggleSelectAll(this.checked)">
             <span class="check-box"></span>
-            Select all
+            Pilih semua
           </label>
           <button class="btn btn-sm btn-primary" id="add-selected-btn" onclick="addSelectedToCRM()" disabled>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Add to CRM (<span id="sel-count">0</span>)
+            Tambah ke CRM (<span id="sel-count">0</span>)
           </button>
         </div>
       </div>
       <div id="results-grid" class="results-grid"></div>
       <div id="load-more-wrap" class="load-more-wrap hidden">
         <button class="btn btn-outline" id="load-more-btn" onclick="loadMore()">
-          Load more results
+          Muat lebih banyak
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
       </div>`;
@@ -897,11 +901,11 @@ function showToast(msg, type = 'info') {
 function esc(str) {
   if (str == null) return '';
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/"/g, '"')
+    .replace(/'/g, '');
 }
 
 function uid() {
@@ -925,12 +929,12 @@ function extractDomain(url) {
 
 function fmtDate(iso) {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return new Date(iso).toLocaleDateString('id-ID', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function fmtDateFull(iso) {
   if (!iso) return '';
-  return new Date(iso).toLocaleString('en-US');
+  return new Date(iso).toLocaleString('id-ID');
 }
 
 function fmtDateFile() {
@@ -938,7 +942,7 @@ function fmtDateFile() {
 }
 
 // ============================================================
-// KEYBOARD SHORTCUT FOR MODAL
+// KEYBOARD SHORTCUTS
 // ============================================================
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {

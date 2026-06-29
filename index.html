@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Varadata</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2563eb">
@@ -12,54 +12,58 @@
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <a href="#main-content" class="sr-only">Loncat ke konten utama</a>
 
   <!-- ===== HEADER ===== -->
   <header class="app-header">
     <div class="header-inner">
       <div class="logo">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-          <rect width="28" height="28" rx="6" fill="#2563eb"/>
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+          <rect width="28" height="28" rx="7" fill="#2563eb"/>
           <path d="M14 4c-4.4 0-8 3.6-8 8 0 6 8 16 8 16s8-10 8-16c0-4.4-3.6-8-8-8zm0 10.8c-1.5 0-2.8-1.3-2.8-2.8S12.5 9.2 14 9.2s2.8 1.3 2.8 2.8-1.3 2.8-2.8 2.8z" fill="white"/>
         </svg>
         <span class="logo-text">Varadata</span>
       </div>
 
-      <nav class="main-nav">
+      <nav class="main-nav" aria-label="Navigasi atas">
         <button class="nav-btn active" data-tab="search" onclick="switchTab('search')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          Search
+          Cari
         </button>
         <button class="nav-btn" data-tab="crm" onclick="switchTab('crm')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           CRM
-          <span class="nav-badge" id="lead-count">0</span>
+          <span class="nav-badge" id="lead-count"></span>
         </button>
       </nav>
 
       <div class="header-actions">
-        <button class="btn btn-sm btn-outline" onclick="exportToExcel()" title="Export to Excel">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Export
+        <button class="btn btn-sm btn-outline btn-icon" onclick="exportToExcel()" title="Export ke Excel">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span class="btn-label">Export</span>
         </button>
-        <button class="btn btn-sm btn-ghost install-btn hidden" id="install-btn" onclick="installPWA()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v10m0 0l-3-3m3 3l3-3"/><path d="M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4"/></svg>
-          Install
+        <button class="btn btn-sm btn-ghost btn-icon install-btn hidden" id="install-btn" onclick="installPWA()" title="Install aplikasi">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v10m0 0l-3-3m3 3l3-3"/><path d="M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4"/></svg>
+          <span class="btn-label">Install</span>
         </button>
       </div>
     </div>
   </header>
 
   <!-- ===== MAIN ===== -->
-  <main class="main-content">
+  <main id="main-content" class="main-content">
 
     <!-- SEARCH TAB -->
     <section id="tab-search" class="tab-panel active">
       <div class="search-hero">
-        <h1 class="search-title">Varadata — Find Leads on Google Maps</h1>
-        <p class="search-subtitle">Search businesses by keyword and location, then save them to your CRM</p>
+        <h1 class="search-title">Temukan Lead di Google Maps</h1>
+        <p class="search-subtitle">Cari bisnis berdasarkan kata kunci & lokasi, lalu simpan ke CRM-mu.</p>
 
         <div class="search-box-wrap">
           <div class="search-input-row">
@@ -69,16 +73,16 @@
                 type="text"
                 id="search-input"
                 class="search-input"
-                placeholder='e.g. "restaurant Jakarta", "dentist Surabaya", "hotel Bali"'
+                placeholder='contoh: "restoran Jakarta", "dokter gigi Surabaya", "hotel Bali"'
                 onkeydown="if(event.key==='Enter') performSearch()"
               >
-              <button class="search-clear hidden" id="search-clear" onclick="clearSearch()">
+              <button class="search-clear hidden" id="search-clear" onclick="clearSearch()" aria-label="Hapus pencarian">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
             <button class="btn btn-primary btn-search" id="search-btn" onclick="performSearch()">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-              Search
+              Cari
             </button>
           </div>
 
@@ -86,61 +90,35 @@
             <label class="option-check">
               <input type="checkbox" id="use-location" onchange="toggleLocationOpts()">
               <span class="check-box"></span>
-              Use my location
+              Gunakan lokasi saya
             </label>
             <div class="location-opts hidden" id="location-opts">
               <select class="select-sm" id="radius-select">
-                <option value="1000">1 km radius</option>
-                <option value="5000" selected>5 km radius</option>
-                <option value="10000">10 km radius</option>
-                <option value="25000">25 km radius</option>
-                <option value="50000">50 km radius</option>
+                <option value="1000">Radius 1 km</option>
+                <option value="5000" selected>Radius 5 km</option>
+                <option value="10000">Radius 10 km</option>
+                <option value="25000">Radius 25 km</option>
+                <option value="50000">Radius 50 km</option>
               </select>
             </div>
             <div class="search-tip">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
-              Tip: include city name for better results
+              Tip: sertakan nama kota untuk hasil lebih baik
             </div>
           </div>
         </div>
       </div>
 
       <!-- Results area -->
-      <div id="results-area" class="results-area hidden">
-        <div class="results-toolbar">
-          <div class="results-info">
-            <span id="results-count-label">0 results</span>
-          </div>
-          <div class="results-tools">
-            <label class="option-check">
-              <input type="checkbox" id="select-all-check" onchange="toggleSelectAll(this.checked)">
-              <span class="check-box"></span>
-              Select all
-            </label>
-            <button class="btn btn-sm btn-primary" id="add-selected-btn" onclick="addSelectedToCRM()" disabled>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Add to CRM (<span id="sel-count">0</span>)
-            </button>
-          </div>
-        </div>
-
-        <div id="results-grid" class="results-grid"></div>
-
-        <div id="load-more-wrap" class="load-more-wrap hidden">
-          <button class="btn btn-outline" id="load-more-btn" onclick="loadMore()">
-            Load more results
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-        </div>
-      </div>
+      <div id="results-area" class="results-area hidden"></div>
 
       <!-- Empty state -->
       <div id="search-empty" class="empty-state">
         <div class="empty-icon">
           <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         </div>
-        <h3>Search Google Maps</h3>
-        <p>Enter a keyword above to find businesses and generate leads</p>
+        <h3>Cari di Google Maps</h3>
+        <p>Masukkan kata kunci di atas untuk menemukan bisnis dan menghasilkan lead.</p>
       </div>
     </section>
 
@@ -150,23 +128,23 @@
       <div class="stats-row" id="stats-row">
         <div class="stat-card">
           <div class="stat-num" id="stat-total">0</div>
-          <div class="stat-lbl">Total Leads</div>
+          <div class="stat-lbl">Total Lead</div>
         </div>
         <div class="stat-card stat-new">
           <div class="stat-num" id="stat-new">0</div>
-          <div class="stat-lbl">New</div>
+          <div class="stat-lbl">Baru</div>
         </div>
         <div class="stat-card stat-contacted">
           <div class="stat-num" id="stat-contacted">0</div>
-          <div class="stat-lbl">Contacted</div>
+          <div class="stat-lbl">Dihubungi</div>
         </div>
         <div class="stat-card stat-won">
           <div class="stat-num" id="stat-won">0</div>
-          <div class="stat-lbl">Won</div>
+          <div class="stat-lbl">Deal</div>
         </div>
         <div class="stat-card stat-lost">
           <div class="stat-num" id="stat-lost">0</div>
-          <div class="stat-lbl">Lost</div>
+          <div class="stat-lbl">Gagal</div>
         </div>
       </div>
 
@@ -174,31 +152,33 @@
       <div class="crm-toolbar">
         <div class="crm-search-wrap">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input type="text" id="crm-search" class="crm-search-input" placeholder="Search leads..." oninput="filterLeads()">
+          <input type="text" id="crm-search" class="crm-search-input" placeholder="Cari lead..." oninput="filterLeads()">
         </div>
-        <select class="select-sm" id="status-filter" onchange="filterLeads()">
-          <option value="">All Status</option>
-          <option value="new">New</option>
-          <option value="contacted">Contacted</option>
-          <option value="interested">Interested</option>
-          <option value="proposal">Proposal Sent</option>
-          <option value="won">Won</option>
-          <option value="lost">Lost</option>
-        </select>
-        <select class="select-sm" id="sort-select" onchange="filterLeads()">
-          <option value="dateAdded_desc">Newest first</option>
-          <option value="dateAdded_asc">Oldest first</option>
-          <option value="name_asc">Name A-Z</option>
-          <option value="rating_desc">Highest rating</option>
-        </select>
-        <button class="btn btn-sm btn-success" onclick="exportToExcel()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Export Excel
-        </button>
-        <button class="btn btn-sm btn-danger-outline" id="delete-selected-btn" onclick="deleteSelected()" style="display:none">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6m4-6v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-          Delete selected
-        </button>
+        <div class="crm-filters">
+          <select class="select-sm" id="status-filter" onchange="filterLeads()">
+            <option value="">Semua Status</option>
+            <option value="new">Baru</option>
+            <option value="contacted">Dihubungi</option>
+            <option value="interested">Tertarik</option>
+            <option value="proposal">Proposal Dikirim</option>
+            <option value="won">Deal</option>
+            <option value="lost">Gagal</option>
+          </select>
+          <select class="select-sm" id="sort-select" onchange="filterLeads()">
+            <option value="dateAdded_desc">Terbaru</option>
+            <option value="dateAdded_asc">Terlama</option>
+            <option value="name_asc">Nama A-Z</option>
+            <option value="rating_desc">Rating Tertinggi</option>
+          </select>
+          <button class="btn btn-sm btn-success" onclick="exportToExcel()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span class="btn-label">Export Excel</span>
+          </button>
+          <button class="btn btn-sm btn-danger-outline" id="delete-selected-btn" onclick="deleteSelected()" style="display:none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6m4-6v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            <span class="btn-label">Hapus terpilih</span>
+          </button>
+        </div>
       </div>
 
       <!-- CRM Table -->
@@ -207,16 +187,16 @@
           <thead>
             <tr>
               <th class="col-check">
-                <input type="checkbox" id="crm-select-all" onchange="toggleCRMSelectAll(this.checked)">
+                <input type="checkbox" id="crm-select-all" onchange="toggleCRMSelectAll(this.checked)" aria-label="Pilih semua">
               </th>
-              <th>Business</th>
-              <th>Category</th>
-              <th>Phone</th>
+              <th>Bisnis</th>
+              <th>Kategori</th>
+              <th>Telepon</th>
               <th>Website</th>
               <th>Rating</th>
               <th>Status</th>
-              <th>Added</th>
-              <th class="col-actions">Actions</th>
+              <th>Ditambahkan</th>
+              <th class="col-actions">Aksi</th>
             </tr>
           </thead>
           <tbody id="crm-tbody"></tbody>
@@ -225,21 +205,34 @@
           <div class="empty-icon">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           </div>
-          <h3>No leads yet</h3>
-          <p>Search Google Maps and add businesses to your CRM</p>
-          <button class="btn btn-primary" onclick="switchTab('search')">Start searching</button>
+          <h3>Belum ada lead</h3>
+          <p>Cari di Google Maps dan tambahkan bisnis ke CRM-mu.</p>
+          <button class="btn btn-primary" onclick="switchTab('search')">Mulai mencari</button>
         </div>
       </div>
     </section>
 
   </main>
 
+  <!-- ===== BOTTOM NAV (mobile PWA) ===== -->
+  <nav class="bottom-nav" aria-label="Navigasi utama">
+    <button class="bottom-nav-btn active" data-tab="search" onclick="switchTab('search')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <span>Cari</span>
+    </button>
+    <button class="bottom-nav-btn" data-tab="crm" onclick="switchTab('crm')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>CRM</span>
+      <span class="bottom-nav-badge" id="bottom-lead-count"></span>
+    </button>
+  </nav>
+
   <!-- ===== LEAD MODAL ===== -->
   <div id="lead-modal" class="modal-overlay hidden" onclick="if(event.target===this) closeModal()">
-    <div class="modal-box">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <div class="modal-header">
-        <h2 class="modal-title" id="modal-title">Lead Details</h2>
-        <button class="modal-close" onclick="closeModal()">
+        <h2 class="modal-title" id="modal-title">Detail Lead</h2>
+        <button class="modal-close" onclick="closeModal()" aria-label="Tutup">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
@@ -263,8 +256,8 @@
       if (!key || key === 'YOUR_GOOGLE_MAPS_API_KEY_HERE') {
         document.getElementById('search-empty').innerHTML =
           '<div class="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>' +
-          '<h3>API key not configured</h3>' +
-          '<p>Copy <code>config.example.js</code> to <code>config.js</code> and add your Google Maps API key.</p>';
+          '<h3>Kunci API belum dikonfigurasi</h3>' +
+          '<p>Salin <code>config.example.js</code> ke <code>config.js</code> dan masukkan Google Maps API key-mu.</p>';
         return;
       }
       const s = document.createElement('script');
