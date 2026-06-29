@@ -214,6 +214,27 @@
 
   </main>
 
+  <!-- ===== FLOATING INSTALL BANNER ===== -->
+  <div id="install-float" class="install-float hidden">
+    <div class="install-float-box">
+      <div class="install-float-content">
+        <div class="install-float-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v10m0 0l-3-3m3 3l3-3"/><path d="M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4"/></svg>
+        </div>
+        <div class="install-float-text">
+          <strong>Install Varadata</strong>
+          <span>Akses lebih cepat & pengalaman lebih baik</span>
+        </div>
+      </div>
+      <div class="install-float-actions">
+        <button class="btn btn-sm btn-primary" onclick="installPWA()">Install Sekarang</button>
+        <button class="install-float-close" onclick="dismissInstallFloat()" aria-label="Tutup">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== BOTTOM NAV (mobile PWA) ===== -->
   <nav class="bottom-nav" aria-label="Navigasi utama">
     <button class="bottom-nav-btn active" data-tab="search" onclick="switchTab('search')">

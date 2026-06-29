@@ -52,7 +52,7 @@ const VaradataApp = {
     window.addEventListener('beforeinstallprompt', e => {
       e.preventDefault();
       window._pwaPrompt = e;
-      document.getElementById('install-btn').classList.remove('hidden');
+      showInstallFloat();
     });
 
     // Handle hash-based tab switching from manifest shortcuts
@@ -903,12 +903,26 @@ function exportToExcel() {
 // ============================================================
 // PWA
 // ============================================================
+function showInstallFloat() {
+  const el = document.getElementById('install-float');
+  if (!el) return;
+  // Don't show again if user already dismissed this session
+  if (sessionStorage.getItem('installDismissed')) return;
+  el.classList.remove('hidden');
+}
+
+function dismissInstallFloat() {
+  const el = document.getElementById('install-float');
+  if (el) el.classList.add('hidden');
+  sessionStorage.setItem('installDismissed', '1');
+}
+
 function installPWA() {
   if (!window._pwaPrompt) return;
   window._pwaPrompt.prompt();
   window._pwaPrompt.userChoice.then(result => {
     if (result.outcome === 'accepted') {
-      document.getElementById('install-btn').classList.add('hidden');
+      dismissInstallFloat();
       showToast('Varadata terpasang!', 'success');
     }
     window._pwaPrompt = null;
