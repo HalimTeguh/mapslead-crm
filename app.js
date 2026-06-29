@@ -98,6 +98,8 @@ function normalizePlace(p) {
     rating: p.rating || null,
     user_ratings_total: p.userRatingCount || 0,
     types: p.types || [],
+    location: p.location || null, // { latitude, longitude }
+    mapsUri: p.googleMapsUri || '',
   };
 }
 
@@ -124,7 +126,7 @@ async function performSearch() {
   try {
     const request = {
       textQuery: query,
-      fields: ['displayName', 'formattedAddress', 'rating', 'userRatingCount', 'types', 'id'],
+      fields: ['displayName', 'formattedAddress', 'rating', 'userRatingCount', 'types', 'id', 'location', 'googleMapsUri'],
       maxResultCount: 20,
     };
 
@@ -214,7 +216,7 @@ function resultCardHTML(place, idx) {
           ? 'Sudah ada'
           : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Tambah ke CRM'}
       </button>
-      <a class="btn btn-sm btn-ghost" href="${mapsUrl(place.place_id)}" target="_blank" rel="noopener" onclick="handleMapsClick(event, '${place.place_id}')">
+      <a class="btn btn-sm btn-ghost" href="${mapsUrl(place.place_id, place.name, place.location, place.mapsUri)}" target="_blank" rel="noopener" onclick="handleMapsClick(event, '${place.place_id}', '${esc(place.name)}', '${place.mapsUri || ''}')">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         Maps
       </a>
@@ -394,6 +396,8 @@ function addBasicLead(place) {
     dateAdded: new Date().toISOString(),
     lastModified: new Date().toISOString(),
     activities: [],
+    location: place.location || null,
+    mapsUri: place.mapsUri || '',
   };
   state.leads.unshift(lead);
   state.addedPlaceIds.add(place.place_id);
@@ -408,9 +412,11 @@ function loadLeads() {
     const raw = localStorage.getItem(STORAGE_KEY);
     state.leads = raw ? JSON.parse(raw) : [];
     state.addedPlaceIds = new Set(state.leads.map(l => l.placeId).filter(Boolean));
-    // Migration: ensure all leads have activities array
+    // Migration: ensure all leads have new fields
     state.leads.forEach(l => {
       if (!Array.isArray(l.activities)) l.activities = [];
+      if (!('location' in l)) l.location = null;
+      if (!('mapsUri' in l)) l.mapsUri = '';
     });
   } catch (e) {
     state.leads = [];
@@ -524,7 +530,7 @@ function leadRowHTML(lead) {
         ${lead.phone ? `<a class="action-btn wa" title="WhatsApp" href="https://wa.me/${lead.phone.replace(/\D/g, '')}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
         </a>` : ''}
-        ${lead.placeId ? `<a class="action-btn maps" title="Buka Maps" href="${mapsUrl(lead.placeId)}" target="_blank" rel="noopener" onclick="handleMapsClick(event, '${lead.placeId}')">
+        ${lead.placeId ? `<a class="action-btn maps" title="Buka Maps" href="${mapsUrl(lead.placeId, lead.name, lead.location, lead.mapsUri)}" target="_blank" rel="noopener" onclick="handleMapsClick(event, '${lead.placeId}', '${esc(lead.name)}', '${lead.mapsUri || ''}')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
         </a>` : ''}
         <button class="action-btn detail" title="Detail & Aktivitas" onclick="openLeadDetail('${lead.id}')">
@@ -732,7 +738,7 @@ function openLeadDetail(id) {
     <div class="quick-actions-bar">
       ${lead.phone ? `<a class="qa-btn" href="tel:${lead.phone}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Telepon</a>` : ''}
       ${lead.phone ? `<a class="qa-btn" href="https://wa.me/${lead.phone.replace(/\D/g, '')}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>WhatsApp</a>` : ''}
-      ${lead.placeId ? `<a class="qa-btn" href="${mapsUrl(lead.placeId)}" target="_blank" rel="noopener" onclick="handleMapsClick(event, '${lead.placeId}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Maps</a>` : ''}
+      ${lead.placeId ? `<a class="qa-btn" href="${mapsUrl(lead.placeId, lead.name, lead.location, lead.mapsUri)}" target="_blank" rel="noopener" onclick="handleMapsClick(event, '${lead.placeId}', '${esc(lead.name)}', '${lead.mapsUri || ''}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Maps</a>` : ''}
       ${lead.website ? `<a class="qa-btn" href="${lead.website}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Website</a>` : ''}
     </div>
 
@@ -764,6 +770,10 @@ function openLeadDetail(id) {
       <div class="form-field">
         <label class="form-label">Rating</label>
         <input class="form-input" id="edit-rating" value="${lead.rating || ''}" placeholder="—" readonly>
+      </div>
+      <div class="form-field full">
+        <label class="form-label">Catatan</label>
+        <textarea class="form-input" id="edit-notes" rows="3" placeholder="Catatan umum tentang lead ini...">${esc(lead.notes || '')}</textarea>
       </div>
     </div>
 
@@ -833,6 +843,7 @@ function saveLeadEdit() {
   lead.email = document.getElementById('edit-email').value.trim();
   lead.website = document.getElementById('edit-website').value.trim();
   lead.status = document.getElementById('edit-status').value;
+  lead.notes = document.getElementById('edit-notes').value.trim();
   lead.lastModified = new Date().toISOString();
 
   saveLeads();
@@ -1041,12 +1052,27 @@ function delay(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
-function mapsUrl(placeId) {
-  return `https://www.google.com/maps/search/?api=1&query_place_id=${encodeURIComponent(placeId)}`;
+function mapsUrl(placeId, name = '', location = null, mapsUri = '') {
+  // 1. Official Google Maps URI from API — most reliable, opens exact place detail
+  if (mapsUri) return mapsUri;
+
+  // 2. Try saved lead's official URI
+  const lead = state.leads.find(l => l.placeId === placeId);
+  if (lead?.mapsUri) return lead.mapsUri;
+
+  // 3. Coordinates fallback
+  const loc = location || lead?.location;
+  if (loc?.latitude != null && loc?.longitude != null) {
+    return `https://www.google.com/maps/search/?api=1&query=${loc.latitude},${loc.longitude}&query_place_id=${encodeURIComponent(placeId)}`;
+  }
+
+  // 4. Name + place_id fallback
+  const displayName = lead?.name || name || '';
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(displayName)}&query_place_id=${encodeURIComponent(placeId)}`;
 }
 
-function openMaps(placeId) {
-  const url = mapsUrl(placeId);
+function openMaps(placeId, name = '') {
+  const url = mapsUrl(placeId, name);
   const popup = window.open(url, '_blank');
   if (!popup || popup.closed || typeof popup.closed === 'undefined') {
     // Fallback for mobile browsers / PWAs that block popups
@@ -1054,9 +1080,16 @@ function openMaps(placeId) {
   }
 }
 
-function handleMapsClick(event, placeId) {
-  event.preventDefault();
-  openMaps(placeId);
+function handleMapsClick(event, placeId, name, mapsUri) {
+  // Try JS window.open first, but only prevent default if it succeeds.
+  // On mobile/PWA popup blockers often kill window.open, so letting the
+  // native link href + target="_blank" proceed is a crucial fallback.
+  const url = mapsUrl(placeId, name, null, mapsUri);
+  const popup = window.open(url, '_blank');
+  if (popup && !popup.closed && typeof popup.closed !== 'undefined') {
+    event.preventDefault(); // JS succeeded, stop native link
+  }
+  // Otherwise: allow native link to handle it (href already correct)
 }
 
 function starStr(rating) {

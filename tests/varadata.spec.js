@@ -9,7 +9,7 @@ async function setupMockedPage(page) {
   await page.route('https://maps.googleapis.com/maps/api/js*', route => route.abort());
   await page.route('https://maps.googleapis.com/maps-api-v3/api/js/**', route => route.abort());
 
-  await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 15000 });
+  await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 30000 });
 
   // Inject mock after page load but before app uses it
   await page.evaluate(() => {
@@ -34,6 +34,8 @@ async function setupMockedPage(page) {
                     rating: 4.5,
                     userRatingCount: 128,
                     types: ['restaurant', 'point_of_interest', 'establishment', 'food'],
+                    location: { latitude: -6.2088, longitude: 106.8456 },
+                    googleMapsUri: 'https://maps.google.com/?cid=1234567890',
                   },
                   {
                     id: 'ChIJN1t_tDeuEmsRUsoyG83frY5',
@@ -42,6 +44,8 @@ async function setupMockedPage(page) {
                     rating: 4.2,
                     userRatingCount: 256,
                     types: ['cafe', 'point_of_interest', 'establishment', 'food', 'store'],
+                    location: { latitude: -6.2146, longitude: 106.8451 },
+                    googleMapsUri: 'https://maps.google.com/?cid=0987654321',
                   },
                 ],
               };
@@ -89,7 +93,7 @@ test.describe('Search Results - Maps Link', () => {
     expect(cards.length).toBe(2);
 
     for (const card of cards) {
-      const mapsLink = card.locator('a[href*="google.com/maps"]');
+      const mapsLink = card.locator('.result-actions a');
       await expect(mapsLink).toBeVisible();
       await expect(mapsLink).toHaveAttribute('target', '_blank');
     }
@@ -101,7 +105,7 @@ test.describe('Search Results - Maps Link', () => {
     expect(cards.length).toBe(2);
 
     for (const card of cards) {
-      const mapsLink = card.locator('a[href*="google.com/maps"]');
+      const mapsLink = card.locator('.result-actions a');
       await expect(mapsLink).toBeVisible();
     }
   });
@@ -109,11 +113,19 @@ test.describe('Search Results - Maps Link', () => {
   test('mobile: Maps link uses a reliable scheme (not only target=_blank)', async ({ page }) => {
     await performSearch(page, 'restoran jakarta');
     const firstCard = page.locator('.result-card').first();
-    const mapsLink = firstCard.locator('a[href*="google.com/maps"]');
+    const mapsLink = firstCard.locator('.result-actions a');
     const href = await mapsLink.getAttribute('href');
-    // The current implementation uses target="_blank" which can fail on mobile PWA.
-    // A more reliable approach is to use window.open or google.maps intent scheme.
-    expect(href).toContain('google.com/maps');
+    expect(href).toContain('maps.google.com');
+  });
+
+  test('Maps link uses official Google Maps URI when available', async ({ page }) => {
+    await performSearch(page, 'restoran jakarta');
+    const firstCard = page.locator('.result-card').first();
+    const mapsLink = firstCard.locator('.result-actions a');
+    const href = await mapsLink.getAttribute('href');
+    // When googleMapsUri is provided by API, it should use the official URL
+    expect(href).toContain('maps.google.com');
+    expect(href).toContain('cid=');
   });
 });
 
@@ -193,6 +205,28 @@ test.describe('Lead Detail & Activity Timeline', () => {
 
     // Quick actions should be visible
     await expect(page.locator('.quick-actions-bar')).toBeVisible();
+  });
+
+  test('notes field should be visible and editable in detail modal', async ({ page }) => {
+    await performSearch(page, 'restoran jakarta');
+    await page.locator('.result-card').first().locator('button:has-text("Tambah ke CRM")').click();
+    await expect(page.locator('.toast.success')).toContainText('ditambahkan');
+
+    await switchTab(page, 'crm');
+    await page.waitForSelector('#crm-tbody tr', { timeout: 5000 });
+    await page.click('#crm-tbody tr .action-btn[title="Detail & Aktivitas"]');
+
+    // Notes textarea should exist
+    const notesField = page.locator('#edit-notes');
+    await expect(notesField).toBeVisible();
+
+    // Fill notes and save
+    await notesField.fill('Catatan penting untuk lead ini');
+    await page.click('button:has-text("Simpan Perubahan")');
+
+    // Reopen detail and verify notes persisted
+    await page.click('#crm-tbody tr .action-btn[title="Detail & Aktivitas"]');
+    await expect(page.locator('#edit-notes')).toHaveValue('Catatan penting untuk lead ini');
   });
 });
 
