@@ -214,7 +214,7 @@ function resultCardHTML(place, idx) {
           ? 'Sudah ada'
           : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Tambah ke CRM'}
       </button>
-      <a class="btn btn-sm btn-ghost" href="https://www.google.com/maps/place/?q=place_id:${place.place_id}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+      <a class="btn btn-sm btn-ghost" href="${mapsUrl(place.place_id)}" target="_blank" rel="noopener" onclick="handleMapsClick(event, '${place.place_id}')">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         Maps
       </a>
@@ -393,6 +393,7 @@ function addBasicLead(place) {
     source: 'Google Maps',
     dateAdded: new Date().toISOString(),
     lastModified: new Date().toISOString(),
+    activities: [],
   };
   state.leads.unshift(lead);
   state.addedPlaceIds.add(place.place_id);
@@ -407,6 +408,10 @@ function loadLeads() {
     const raw = localStorage.getItem(STORAGE_KEY);
     state.leads = raw ? JSON.parse(raw) : [];
     state.addedPlaceIds = new Set(state.leads.map(l => l.placeId).filter(Boolean));
+    // Migration: ensure all leads have activities array
+    state.leads.forEach(l => {
+      if (!Array.isArray(l.activities)) l.activities = [];
+    });
   } catch (e) {
     state.leads = [];
     state.addedPlaceIds = new Set();
@@ -511,10 +516,19 @@ function leadRowHTML(lead) {
       </select>
     </td>
     <td data-label="Ditambahkan" style="color:var(--text-3);font-size:12px;white-space:nowrap">${fmtDate(lead.dateAdded)}</td>
-    <td class="col-actions">
+    <td class="col-actions" data-label="Aksi">
       <div class="table-actions">
-        <button class="action-btn edit" title="Edit" onclick="openEditModal('${lead.id}')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        ${lead.phone ? `<a class="action-btn call" title="Telepon" href="tel:${lead.phone}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </a>` : ''}
+        ${lead.phone ? `<a class="action-btn wa" title="WhatsApp" href="https://wa.me/${lead.phone.replace(/\D/g, '')}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        </a>` : ''}
+        ${lead.placeId ? `<a class="action-btn maps" title="Buka Maps" href="${mapsUrl(lead.placeId)}" target="_blank" rel="noopener" onclick="handleMapsClick(event, '${lead.placeId}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </a>` : ''}
+        <button class="action-btn detail" title="Detail & Aktivitas" onclick="openLeadDetail('${lead.id}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
         </button>
         <button class="action-btn delete" title="Hapus" onclick="deleteLead('${lead.id}')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6m4-6v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
@@ -640,20 +654,88 @@ function deleteSelected() {
 }
 
 // ============================================================
-// EDIT MODAL
+// ACTIVITY SYSTEM
 // ============================================================
-function openEditModal(id) {
+const ACTIVITY_TYPES = {
+  note:     { label: 'Catatan',   icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>', color: 'var(--text-2)' },
+  call:     { label: 'Telepon',   icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>', color: 'var(--success-600)' },
+  visit:    { label: 'Kunjungan', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>', color: 'var(--primary-600)' },
+  email:    { label: 'Email',     icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>', color: 'var(--purple-500)' },
+  reminder: { label: 'Pengingat', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>', color: 'var(--warning-500)' },
+};
+
+function addActivity(leadId, type, content, metadata = {}) {
+  const lead = state.leads.find(l => l.id === leadId);
+  if (!lead) return;
+  const activity = {
+    id: uid(),
+    type,
+    content: content.trim(),
+    date: new Date().toISOString(),
+    metadata,
+  };
+  lead.activities.unshift(activity);
+  lead.lastModified = new Date().toISOString();
+  saveLeads();
+}
+
+function deleteActivity(leadId, activityId) {
+  const lead = state.leads.find(l => l.id === leadId);
+  if (!lead) return;
+  lead.activities = lead.activities.filter(a => a.id !== activityId);
+  lead.lastModified = new Date().toISOString();
+  saveLeads();
+  openLeadDetail(leadId); // re-render modal
+}
+
+function renderActivityItem(a) {
+  const cfg = ACTIVITY_TYPES[a.type] || ACTIVITY_TYPES.note;
+  return `
+  <div class="activity-item" id="act-${a.id}">
+    <div class="activity-dot" style="color:${cfg.color}">${cfg.icon}</div>
+    <div class="activity-body">
+      <div class="activity-meta">
+        <span class="activity-type" style="color:${cfg.color}">${cfg.label}</span>
+        <span class="activity-date">${fmtDateFull(a.date)}</span>
+      </div>
+      <div class="activity-content">${esc(a.content)}</div>
+    </div>
+    <button class="activity-delete" onclick="deleteActivity('${state.editingLeadId}', '${a.id}')" title="Hapus">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>`;
+}
+
+function renderActivities(lead) {
+  if (!lead.activities || lead.activities.length === 0) {
+    return `<div class="activity-empty">Belum ada aktivitas. Tambahkan catatan, telepon, atau kunjungan pertama.</div>`;
+  }
+  return lead.activities.map(a => renderActivityItem(a)).join('');
+}
+
+// ============================================================
+// LEAD DETAIL MODAL
+// ============================================================
+function openLeadDetail(id) {
   const lead = state.leads.find(l => l.id === id);
   if (!lead) return;
   state.editingLeadId = id;
 
-  document.getElementById('modal-title').textContent = 'Edit Lead';
+  document.getElementById('modal-title').textContent = 'Detail Lead';
   document.getElementById('modal-body').innerHTML = `
     ${lead.address ? `
     <div class="modal-info-row">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
       ${esc(lead.address)}
     </div>` : ''}
+
+    <div class="quick-actions-bar">
+      ${lead.phone ? `<a class="qa-btn" href="tel:${lead.phone}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Telepon</a>` : ''}
+      ${lead.phone ? `<a class="qa-btn" href="https://wa.me/${lead.phone.replace(/\D/g, '')}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>WhatsApp</a>` : ''}
+      ${lead.placeId ? `<a class="qa-btn" href="${mapsUrl(lead.placeId)}" target="_blank" rel="noopener" onclick="handleMapsClick(event, '${lead.placeId}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Maps</a>` : ''}
+      ${lead.website ? `<a class="qa-btn" href="${lead.website}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Website</a>` : ''}
+    </div>
+
     <div class="form-grid">
       <div class="form-field full">
         <label class="form-label">Nama Bisnis</label>
@@ -683,18 +765,62 @@ function openEditModal(id) {
         <label class="form-label">Rating</label>
         <input class="form-input" id="edit-rating" value="${lead.rating || ''}" placeholder="—" readonly>
       </div>
-      <div class="form-field full">
-        <label class="form-label">Catatan</label>
-        <textarea class="form-input" id="edit-notes" rows="4" placeholder="Catatan, jadwal follow-up, dll.">${esc(lead.notes || '')}</textarea>
+    </div>
+
+    <div class="activity-section">
+      <div class="activity-header">
+        <h3>Riwayat Aktivitas (${lead.activities.length})</h3>
+      </div>
+      <div class="activity-form">
+        <div class="activity-type-tabs">
+          ${Object.entries(ACTIVITY_TYPES).map(([k, v]) => `<button type="button" class="activity-tab" data-act-type="${k}" onclick="selectActivityType('${k}')">${v.icon}<span>${v.label}</span></button>`).join('')}
+        </div>
+        <input type="hidden" id="activity-type" value="note">
+        <textarea class="form-input" id="activity-content" rows="3" placeholder="Tambahkan catatan..."></textarea>
+        <button class="btn btn-sm btn-primary" onclick="submitActivity()" style="margin-top:8px">Tambah Aktivitas</button>
+      </div>
+      <div class="activity-list">
+        ${renderActivities(lead)}
       </div>
     </div>
   `;
   document.getElementById('modal-footer').innerHTML = `
-    <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+    <button class="btn btn-ghost" onclick="closeModal()">Tutup</button>
     <button class="btn btn-primary" onclick="saveLeadEdit()">Simpan Perubahan</button>
   `;
   document.getElementById('lead-modal').classList.remove('hidden');
-  document.getElementById('edit-name').focus();
+  // Select default activity type
+  selectActivityType('note');
+}
+
+let _selectedActivityType = 'note';
+function selectActivityType(type) {
+  _selectedActivityType = type;
+  document.getElementById('activity-type').value = type;
+  document.querySelectorAll('.activity-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.actType === type);
+  });
+  const placeholderMap = {
+    note: 'Tambahkan catatan...',
+    call: 'Catatan hasil telepon...',
+    visit: 'Catatan kunjungan...',
+    email: 'Catatan email yang dikirim...',
+    reminder: 'Catatan pengingat / follow-up...',
+  };
+  const ta = document.getElementById('activity-content');
+  if (ta) ta.placeholder = placeholderMap[type] || 'Tambahkan catatan...';
+}
+
+function submitActivity() {
+  const content = document.getElementById('activity-content').value;
+  if (!content.trim()) {
+    showToast('Isi aktivitas tidak boleh kosong', 'warning');
+    return;
+  }
+  addActivity(state.editingLeadId, _selectedActivityType, content);
+  // Refresh modal body to show new activity
+  openLeadDetail(state.editingLeadId);
+  showToast('Aktivitas ditambahkan', 'success');
 }
 
 function saveLeadEdit() {
@@ -707,7 +833,6 @@ function saveLeadEdit() {
   lead.email = document.getElementById('edit-email').value.trim();
   lead.website = document.getElementById('edit-website').value.trim();
   lead.status = document.getElementById('edit-status').value;
-  lead.notes = document.getElementById('edit-notes').value.trim();
   lead.lastModified = new Date().toISOString();
 
   saveLeads();
@@ -914,6 +1039,24 @@ function uid() {
 
 function delay(ms) {
   return new Promise(r => setTimeout(r, ms));
+}
+
+function mapsUrl(placeId) {
+  return `https://www.google.com/maps/search/?api=1&query_place_id=${encodeURIComponent(placeId)}`;
+}
+
+function openMaps(placeId) {
+  const url = mapsUrl(placeId);
+  const popup = window.open(url, '_blank');
+  if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+    // Fallback for mobile browsers / PWAs that block popups
+    window.location.href = url;
+  }
+}
+
+function handleMapsClick(event, placeId) {
+  event.preventDefault();
+  openMaps(placeId);
 }
 
 function starStr(rating) {

@@ -809,11 +809,16 @@ button, input, select, textarea, a {
   min-width: 36px;
   align-items: center;
   justify-content: center;
+  text-decoration: none;
 }
 
 .action-btn:hover { background: var(--bg); color: var(--text-2); }
 .action-btn.delete:hover { background: var(--danger-50); color: var(--danger-600); }
 .action-btn.edit:hover { background: var(--primary-50); color: var(--primary-600); }
+.action-btn.maps:hover { background: #f0fdf4; color: var(--success-600); }
+.action-btn.call:hover { background: #ecfdf5; color: var(--success-600); }
+.action-btn.wa:hover { background: #ecfdf5; color: #25d366; }
+.action-btn.detail:hover { background: var(--primary-50); color: var(--primary-600); }
 
 .fetching-badge {
   display: inline-flex;
@@ -934,6 +939,149 @@ textarea.form-input { resize: vertical; min-height: 90px; }
 }
 
 .modal-info-row svg { color: var(--text-3); flex-shrink: 0; margin-top: 1px; }
+
+/* ---------- Quick Actions Bar (modal) ---------- */
+.quick-actions-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.qa-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  transition: all .15s;
+  min-height: 36px;
+}
+.qa-btn:hover { background: var(--primary-50); color: var(--primary-600); border-color: var(--primary-600); }
+.qa-btn svg { color: var(--text-3); }
+
+/* ---------- Activity Section ---------- */
+.activity-section { margin-top: 20px; }
+.activity-header { margin-bottom: 12px; }
+.activity-header h3 {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+
+.activity-form { margin-bottom: 16px; }
+.activity-type-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.activity-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border: 1.5px solid var(--border-2);
+  border-radius: 20px;
+  background: var(--card);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .15s;
+  min-height: 32px;
+}
+.activity-tab:hover { border-color: var(--primary-600); color: var(--primary-600); }
+.activity-tab.active {
+  background: var(--primary-600);
+  color: #fff;
+  border-color: var(--primary-600);
+}
+.activity-tab svg { stroke-width: 2; }
+
+.activity-list { display: flex; flex-direction: column; gap: 12px; }
+
+.activity-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  position: relative;
+}
+.activity-dot {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--card);
+  border: 1.5px solid currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+.activity-body { flex: 1; min-width: 0; }
+.activity-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+.activity-type {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+.activity-date {
+  font-size: 11px;
+  color: var(--text-3);
+}
+.activity-content {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.activity-delete {
+  padding: 4px;
+  border: none;
+  background: none;
+  color: var(--text-3);
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  min-width: 24px;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.activity-item:hover .activity-delete { opacity: 1; }
+.activity-delete:hover { color: var(--danger-600); background: var(--danger-50); }
+
+.activity-empty {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-3);
+  font-size: 13px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--border-2);
+}
 
 /* ---------- Toast ---------- */
 .toast-container {
